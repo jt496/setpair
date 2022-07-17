@@ -4,10 +4,9 @@ import data.rat
 import tactic
 
 open finset nat
-open_locale big_operators finset_family
+open_locale big_operators 
 
 namespace finset
-
 namespace bbsetpair2
 --Bollobas set pair theorem 
 --A and B are the families of finite sets indexed by I
