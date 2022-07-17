@@ -1,0 +1,8 @@
+[package]
+name = "BSP"
+version = "0.1"
+lean_version = "leanprover-community/lean:3.44.1"
+path = "src"
+
+[dependencies]
+mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "ff5e97ad1a8b6f076e1d4be39d16fec27b5acd62"}

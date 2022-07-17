@@ -1,0 +1,257 @@
+import algebra.big_operators.ring
+import combinatorics.double_counting
+import combinatorics.set_family.shadow
+import data.rat.order
+import tactic.linarith
+
+
+open finset nat
+open_locale big_operators finset_family
+
+
+namespace finset
+
+namespace bbsetpair
+
+
+/- add.... Bollobas set pair theorem -/
+
+
+@[ext] structure setpair :=
+  (A : ℕ → finset ℕ)
+  (B : ℕ → finset ℕ)
+  (I : finset ℕ)
+  (sp : ∀i∈ I,∀j∈ I, ((A i)∩(B j)).nonempty ↔ i ≠ j)
+  (wA: ℕ:= ∑ i in I, card(A i))
+  (wAg: wA = ∑ i in I, card(A i))
+   (wB : ℕ)
+   (wBg: wB = ∑ i in I, card(B i))
+   (w: ℕ)
+   (wg: w= wA + wB)
+
+
+
+@[simp]def er  (S : setpair) (x : ℕ) : setpair := {
+A:=begin
+intro n, exact erase (S.A n) x,
+end,
+B:=S.B,
+I:=S.I.filter(λi, x∉(S.B i)),
+sp:=begin
+  intros i  hi j  hj,
+  rw [mem_filter] at *,
+  suffices same: ((S.A i).erase x ∩ S.B j) = (S.A i) ∩ (S.B j),{
+    rw same, exact S.sp i hi.1 j hj.1,}, tidy, 
+end,
+wA:=∑ i in S.I.filter(λi, x∉(S.B i)), card((S.A i).erase x),
+wB:=∑ i in S.I.filter(λi, x∉(S.B i)), card(S.B i),
+w:=∑ i in S.I.filter(λi, x∉(S.B i)), card((S.A i).erase x) + ∑ i in S.I.filter(λi, x∉(S.B i)), card(S.B i),
+wAg:=rfl,
+wBg:=rfl,
+wg:=rfl,
+}
+
+lemma er_indx_eq (x : ℕ) (S :setpair) : S.wB=(er S x).wB+∑ i in S.I.filter(λi,x∈(S.B i)), card (S.B i) :=
+begin
+simp [er, setpair.wBg],
+convert sum_union _,
+ext,rw [mem_union, mem_filter,mem_filter],tauto!,tidy,
+end
+
+lemma er_set_eq (x : ℕ) (S :setpair) : S.wA=∑ i in S.I.filter(λi,x∈(S.B i)), card (S.A i) +(er S x).wA+card(S.I.filter(λi, x∉(S.B i)∧x∈(S.A i))) :=
+begin
+simp [er, setpair.wAg,setpair.wBg],
+rw ← sum_filter_add_sum_filter_not S.I (λi,x∈(S.B i)), tidy,
+
+--ext,rw [mem_union, mem_filter,mem_filter],tauto!,tidy,
+sorry,
+end
+
+
+lemma er_sets_le (x : ℕ) (S :setpair) : (er S x).wA ≤ S.wA:=
+begin
+simp [setpair.wAg],
+rw ← sum_filter_add_sum_filter_not S.I (λi, x∉(S.B i)),
+have leA: ∀ i∈ (S.I.filter(λi, x∉ (S.B i))),  (card (erase (S.A i) x)) ≤ (card (S.A i)), {
+  intros i hi,  exact card_erase_le,},
+  push_neg,
+have sub:S.I= (er S x).I ∪ (S.I.filter(λi, x∈ (S.B i))),{
+  simp [er], 
+  ext,rw [mem_union], split,intro a, rw mem_filter, 
+  simp [er], tauto,intro h, simp [mem_filter,er] at h, tauto,},
+  sorry,
+end
+
+lemma er_indx_lt (x : ℕ) (S :setpair) (h: ∃ i∈ S.I, x∈ (S.B i)) : (er S x).wB < S.wB:=
+begin
+
+sorry,
+end
+
+lemma er_sets_lt (x : ℕ) (S :setpair) (h: ∃ i∈ S.I, x∈ (S.A i)) : (er S x).wA < S.wA:=
+begin
+
+sorry,
+end
+
+
+lemma er_dec (x : ℕ) (S :setpair) (h: ∃ i∈ S.I, x∈ (S.A i) ∨ x∈ (S.B i)) : (er S x).w < S.w:=
+begin
+have sub:S.I= (er S x).I ∪ (S.I.filter(λi, x∈ (S.B i))),{
+  ext,rw [mem_union], split,intro a, rw mem_filter, 
+  simp [er], tauto,intro h, simp [mem_filter,er] at h, tauto,},
+have leA: ∀ i∈ S.I,  (card ((er S x).A i)) ≤ (card (S.A i)), {
+  intros i hi, simp [er], exact card_erase_le,},
+rcases h with ⟨k, hA, hAx| hBx⟩,
+have ltA: (er S x).wA < S.wA,{
+  simp [er,leA],
+  have ltAh:∃j∈ S.I, (card ((er S x).A j)) < card (S.A j),{ 
+    use [k,hA], simp [er], apply card_erase_lt_of_mem hAx, 
+  },
+  sorry,
+},
+have ltB: (∃ i∈ S.I, x∈ (S.B i))→ (er S x).wB < S.wB,{
+  sorry,
+
+},
+sorry,
+sorry,
+
+end
+
+
+
+end bbsetpair
+end finset
+
+
+/-
+
+
+def set_pair (A B: ℕ → finset ℕ) (I : finset ℕ) : Prop:= ∀i,∀j, i∈ I → j ∈ I →  (((A i)∩(B j)).nonempty ↔ i ≠ j)
+
+def empty_sp  {A B: ℕ → finset ℕ} {I : finset ℕ} (h: set_pair A B I) : Prop:= I=∅
+
+def trivial_sp  {A B: ℕ → finset ℕ}  {I : finset ℕ} (h: set_pair A B I) : Prop:= ∃i, (A i = ∅ ∨ B i = ∅)
+
+def univ_sp  (A B: ℕ → finset ℕ)   (I : finset ℕ) : ℕ:= ∑ i in I, (card(A i)+card(B i))
+
+def univ_C_sp (C: ℕ → finset ℕ)   (I : finset ℕ) : ℕ:= ∑ i in I, card(C i)
+
+lemma univ_add (A B: ℕ → finset ℕ)   (I : finset ℕ) : univ_sp A B I = univ_C_sp A I + univ_C_sp B I :=
+begin
+  rw [univ_sp,univ_C_sp,univ_C_sp], apply sum_add_distrib,
+end
+
+
+
+def density_sp  {A B: ℕ → finset ℕ} {I : finset ℕ}  (h: set_pair A B I) : ℚ:=  ∑ i in I,  (1 : ℚ)/ (card(A i)+card(B i)).choose (card (A i))
+
+
+
+--def minimal_sp {n : ℕ} {I : finset (range n)} {A B: I → finset ℕ} (h₁: set_pair A B) : Prop := (finset.bUnion univ A) = (finset.bUnion univ B)
+
+
+lemma sp_symm   {I : finset ℕ} {A B: ℕ → finset ℕ} (h: set_pair A B I) : set_pair B A I:=
+begin
+ intros i j hi hj, rw [inter_comm, ne_comm], exact h j i hj hi, 
+end
+
+
+
+def sp_down  {A B: ℕ → finset ℕ} {I J : finset ℕ} (h: set_pair A B I) : J ⊆ I → set_pair A B J:=
+begin
+ rintros JI i j ij jj,
+ apply h i j (JI ij) (JI jj),
+end
+
+def erase_x {I : finset ℕ} {A B: ℕ → finset ℕ} (h: set_pair A B I) (x : ℕ) : ℕ → finset ℕ :=
+begin
+intro n, exact erase (A n) x,
+end
+
+
+
+def erase_indx {I : finset ℕ} {A B: ℕ → finset ℕ} (h: set_pair A B I) (x : ℕ) : finset ℕ:= (filter (λi, x ∉ (B i)) I)
+
+lemma univ_erase_A_lt {x : ℕ} {A B: ℕ → finset ℕ} {I : finset ℕ} (h: set_pair A B I): 
+( ∃i∈I, x∈(A i)) → univ_C_sp (erase_x h x) I < univ_C_sp  A I := 
+ begin
+  rw [univ_C_sp, univ_C_sp,erase_x], dsimp,
+  intro H, 
+  have le: ∀i∈I, ((A i).erase x).card ≤  (A i).card,{
+    simp only [card_erase_le, implies_true_iff], },
+  have lt: ∃j∈ I, ((A j).erase x).card < (A j).card,{ 
+    rcases H with ⟨j,H,xA⟩,
+    use [j,H], apply card_erase_lt_of_mem xA,},
+    apply sum_lt_sum le lt,
+ end
+
+
+lemma univ_erase_A_le {x : ℕ} {A B: ℕ → finset ℕ} {I : finset ℕ} (h: set_pair A B I): 
+ univ_C_sp (erase_x h x) I ≤ univ_C_sp  A I := 
+begin
+sorry,
+
+end
+
+
+ lemma univ_erase_B_lt {y : ℕ} {A B: ℕ → finset ℕ} {I : finset ℕ} (h: set_pair A B I) (hB: ∃i∈I, y∈(B i)) : 
+ univ_C_sp B (erase_indx h y) < univ_C_sp B I := 
+ begin
+  rw [univ_C_sp, univ_C_sp,erase_indx], dsimp, 
+  rw ← sum_filter_add_sum_filter_not I (λ j, y∈ (B j)),
+  push_neg,
+  simp only [filter_congr_decidable, lt_add_iff_pos_left],
+  rcases hB with ⟨i, H , xB⟩,
+  apply sum_pos _ _,
+  intros j hj,rw mem_filter at hj,
+  rw  [pos_iff_ne_zero],
+  apply card_ne_zero_of_mem hj.2,
+  use i,rw [mem_filter], exact ⟨H,xB⟩,
+ end
+
+lemma univ_erase_B_le {y : ℕ} {A B: ℕ → finset ℕ} {I : finset ℕ} (h: set_pair A B I) : 
+univ_C_sp B (erase_indx h y) ≤ univ_C_sp B I := 
+begin
+sorry,
+end
+
+
+lemma erased_is_sp  {I : finset ℕ} {A B: ℕ → finset ℕ} (h: set_pair A B I) (x : ℕ) : 
+set_pair (erase_x h x) B (erase_indx h x) :=
+begin
+  rw set_pair at *,intros i j hi hj , 
+  rw [erase_indx,mem_filter] at *,
+  rw [erase_x],
+  suffices same: ((A i).erase x ∩ B j) = (A i) ∩ (B j),{
+    rw same, exact  h  i j hi.1  hj.1,}, tidy,
+end
+
+
+lemma erased_is_smaller  {I : finset ℕ} {A B: ℕ → finset ℕ} (h: set_pair A B I) (x : ℕ) (hx: (∃ k∈ I, x∈ (A k)) ∨ (∃k∈I,x∈(B k))): 
+univ_sp (erase_x h x) B (erase_indx h x) < univ_sp A B I :=
+begin
+cases hx with Ak Bk,
+rw [univ_add,univ_add],
+apply add_lt_add_of_lt_of_le (univ_erase_A_lt h Ak) (univ_erase_B_le h) , 
+
+end
+
+
+
+
+
+
+
+
+
+--def reduce_B_sp {n : ℕ} {I : finset (range n)} {A B: I → finset ℕ} (h₁: set_pair A B) (x : ℕ) : finset (range n) :=  
+
+
+
+
+
+
+
+-/
